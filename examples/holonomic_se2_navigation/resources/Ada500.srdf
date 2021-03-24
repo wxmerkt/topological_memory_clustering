@@ -1,0 +1,17 @@
+<?xml version="1.0" ?>
+<robot name="Ada500">
+    <group name="whole_body">
+        <joint name="world_joint" />
+    </group>
+    <virtual_joint name="world_joint" type="planar" parent_frame="world_frame" child_link="base_link" />
+    <disable_collisions link1="base_link" link2="wheel_link_fl" reason="Adjacent" />
+    <disable_collisions link1="base_link" link2="wheel_link_fr" reason="Adjacent" />
+    <disable_collisions link1="base_link" link2="wheel_link_rl" reason="Adjacent" />
+    <disable_collisions link1="base_link" link2="wheel_link_rr" reason="Adjacent" />
+    <disable_collisions link1="wheel_link_fl" link2="wheel_link_fr" reason="Never" />
+    <disable_collisions link1="wheel_link_fl" link2="wheel_link_rl" reason="Never" />
+    <disable_collisions link1="wheel_link_fl" link2="wheel_link_rr" reason="Never" />
+    <disable_collisions link1="wheel_link_fr" link2="wheel_link_rl" reason="Never" />
+    <disable_collisions link1="wheel_link_fr" link2="wheel_link_rr" reason="Never" />
+    <disable_collisions link1="wheel_link_rl" link2="wheel_link_rr" reason="Never" />
+</robot>

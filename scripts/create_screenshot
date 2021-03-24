@@ -1,0 +1,23 @@
+#!/usr/bin/env python
+from __future__ import print_function
+from jsk_rviz_plugins.srv import Screenshot, ScreenshotRequest, ScreenshotResponse
+from time import sleep
+import os
+import rospy
+import sys
+import tempfile
+
+temp_name = next(tempfile._get_candidate_names())
+default_tmp_dir = tempfile._get_default_tempdir()
+
+filename = os.path.join(default_tmp_dir, temp_name + '.png')
+
+if len(sys.argv) > 1:
+    filename = os.path.abspath(sys.argv[1])
+
+rospy.wait_for_service('/rviz/screenshot')
+screenshot = rospy.ServiceProxy('/rviz/screenshot', Screenshot)
+
+screenshot(filename)
+sleep(0.1)
+print(filename)

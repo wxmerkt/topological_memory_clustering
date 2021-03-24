@@ -1,0 +1,115 @@
+#!/usr/bin/env python
+from __future__ import print_function
+
+import numpy as np
+# import topological_memory_clustering.rviz
+import sys
+import os
+from time import sleep
+from copy import deepcopy
+
+import rospy
+from visualization_msgs.msg import Marker,MarkerArray
+from geometry_msgs.msg import Point
+from std_msgs.msg import ColorRGBA
+
+
+class_colors_rviz = [ColorRGBA( 41/255.,  89/255.,  57/255., 1.0), # green
+                     ColorRGBA( 67/255.,  53/255.,  32/255., 1.0), # brown
+                     ColorRGBA( 35/255., 104/255., 155/255., 1.0), # blue
+                     ColorRGBA(114/255., 106/255., 149/255., 1.0), # purple
+                     ColorRGBA(236/255.,  70/255.,  70/255., 1.0), # red
+                     ColorRGBA(226/255., 120/255.,   2/255., 1.0), # orange
+                     ]
+
+
+def delete_markers(pub):
+    # Delete
+    ma = MarkerArray()
+    m = Marker()
+    m.action = m.DELETEALL
+    ma.markers.append(m)
+    pub.publish(ma)
+
+
+def visualize_quadrotor_paths(pub, samples_X, idx=None):
+    # New
+    ma = MarkerArray()
+
+    for i in range(samples_X.shape[0]):
+        m = Marker()
+        m.action = m.ADD
+        m.type = m.LINE_STRIP
+        m.header.frame_id = 'exotica/world_frame'
+        m.pose.orientation.w = 1.0
+        m.scale.x = 0.03
+        if idx is not None:
+            m.color = deepcopy(class_colors_rviz[idx[i]])
+            # m.color.a = 0.03 # with full colours
+            m.color.a = 0.04
+        else:
+            m.color.r = np.random.uniform(0., 1.)
+            m.color.g = np.random.uniform(0., 1.)
+            m.color.b = np.random.uniform(0., 1.)
+            m.color.a = 0.2 #1.0
+        m.id = i
+        for t in range(samples_X.shape[2]):
+            p = Point(samples_X[i,0,t],samples_X[i,1,t],samples_X[i,2,t])
+            m.points.append(p)
+        ma.markers.append(m)
+
+    print(len(ma.markers))
+    pub.publish(ma)
+
+
+if __name__ == "__main__":
+    print(len(sys.argv))
+    assert len(sys.argv) > 1
+
+    filename = os.path.abspath(sys.argv[1])
+    print(filename)
+
+    # Init
+    rospy.init_node('vis')
+    pub = rospy.Publisher('/quadrotor_paths', MarkerArray, queue_size=1)
+    sleep(0.5)
+
+    data = np.load(filename)
+    samples_X = data['samples_X'][:,:3,:]
+    samples_U = data['samples_U']
+    idx = None
+    if 'labels_6d' in data.keys():
+        idx = data['labels_6d']
+
+    print(samples_X[:,:3,0])
+
+    if 'samples_final_cost' in data.keys():
+        print(np.mean(data['samples_final_cost']), np.min(data['samples_final_cost']), np.max(data['samples_final_cost']))
+        cost_threshold = 50.
+        samples_X = samples_X[data['samples_final_cost'] < cost_threshold]
+        if idx is not None:
+            idx = labels[data['samples_final_cost']]
+    
+    delete_markers(pub)
+    visualize_quadrotor_paths(pub, samples_X, idx)
+
+    # Load quadrotor & obstacles
+    import pyexotica as exo
+    exo.Setup.init_ros()
+    sleep(0.25)
+    solver = exo.Setup.load_solver('{topological_memory_clustering}/examples/quadrotor/resources/quadrotor_maze.xml')
+    sleep(0.25)
+    solver.get_problem().get_scene().get_kinematic_tree().publish_frames() # Publish obstacles
+
+    vis = exo.VisualizationMoveIt(solver.get_problem().get_scene())
+
+    input("wait for enter")
+    for i in range(0, samples_X.shape[0], 10):
+        print("Sample", i)
+        traj = data['samples_X'][i,:6,:]
+        print(traj.shape)
+        vis.display_trajectory(traj.T)
+        input("Enter for next trajectory...")
+
+    sleep(1)
+    del solver

@@ -1,0 +1,46 @@
+<?xml version="1.0" ?>
+<DynamicTimeIndexedProblemConfig>
+  <ControlLimitedFeasibilityDrivenDDPSolver Name="ControlLimitedDDPSolver">
+    <Debug>1</Debug>
+    <RegularizationRate>0.1</RegularizationRate>
+    <UseNewBoxQP>1</UseNewBoxQP>
+    <BoxQPUsePolynomialLinesearch>1</BoxQPUsePolynomialLinesearch>
+    <BoxQPUseCholeskyFactorization>1</BoxQPUseCholeskyFactorization>
+  </ControlLimitedFeasibilityDrivenDDPSolver>
+
+  <DynamicTimeIndexedShootingProblem Name="MyProblem">
+    <PlanningScene>
+      <Scene>
+        <JointGroup>actuated_joints</JointGroup>
+        <URDF>{exotica_cartpole_dynamics_solver}/resources/cartpole.urdf</URDF>
+        <SRDF>{exotica_cartpole_dynamics_solver}/resources/cartpole.srdf</SRDF>
+        <SetRobotDescriptionRosParams>1</SetRobotDescriptionRosParams>
+        <DynamicsSolver>
+          <CartpoleDynamicsSolver Name="solver">
+            <Integrator>RK1</Integrator>
+            <ControlLimitsLow>-10</ControlLimitsLow>
+            <ControlLimitsHigh>10</ControlLimitsHigh>
+            <dt>0.05</dt>
+          </CartpoleDynamicsSolver>
+        </DynamicsSolver>
+      </Scene>
+    </PlanningScene>
+
+    <Maps>
+      <ContinuousJointPose Name="CJP">
+        <JointMap>1</JointMap>
+      </ContinuousJointPose>
+    </Maps>
+
+    <Cost>
+      <Task Task="CJP" Goal="-1 0" Rho="0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0 100.0"/>
+    </Cost>
+
+    <T>50</T>
+    <tau>0.05</tau>
+    <Q_rate>0</Q_rate>
+    <Qf>1 0 1 1</Qf>
+    <Qf_rate>100</Qf_rate>
+    <R_rate>1e-2</R_rate>
+  </DynamicTimeIndexedShootingProblem>
+</DynamicTimeIndexedProblemConfig>

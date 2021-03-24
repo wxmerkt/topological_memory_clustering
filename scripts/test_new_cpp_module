@@ -1,0 +1,165 @@
+#!/usr/bin/env python
+from __future__ import print_function
+
+from time import time
+import numpy as np
+from topological_memory_clustering.homology import *
+import homology_clustering_py
+
+data = np.load('202007_datasets/quadrotor_dataset_random_start_points.npz')
+print(data.keys())
+samples_X = data['samples_X'][:,:,:]
+samples_U = data['samples_U']
+samples_final_cost = data['samples_final_cost']
+print(samples_X.shape, samples_U.shape, samples_final_cost.shape)
+
+# Only include with cost < 18
+threshold = 50. #18.08 #18.05
+samples_X = samples_X[samples_final_cost < threshold]
+samples_U = samples_U[samples_final_cost < threshold]
+samples_final_cost = samples_final_cost[samples_final_cost < threshold]
+print(samples_X.shape, samples_U.shape, samples_final_cost.shape)
+
+samples_downsampling_factor = 10
+time_downsampling_factor = 5
+samples_X = samples_X[::samples_downsampling_factor, :, ::time_downsampling_factor]
+samples_U = samples_U[::samples_downsampling_factor, ::time_downsampling_factor, :]
+samples_final_cost = samples_final_cost[::samples_downsampling_factor]
+print(samples_X.shape, samples_U.shape, samples_final_cost.shape)
+
+sample_dim = samples_X.shape[0]
+state_dim = samples_X.shape[1]
+time_dim = samples_X.shape[2]
+print(sample_dim, state_dim, time_dim)
+
+# print(samples_X.shape)
+# demos = samples_X.swapaxes(1,2).copy()
+# demos = samples_U.copy()
+# dataset = np.vstack([d for d in demos])
+
+demos = np.random.random((3,5,3))
+# demos = np.arange(2*3*2).reshape(2,3,2)
+# demos = np.arange(3*3*3).reshape(3,3,3)
+
+np.set_printoptions(linewidth=400)
+print(demos.shape)
+
+# for i in range(demos.shape[0]):
+#     print(i, "\n", demos[i,:,:])
+
+
+s_python = time()
+D_python = get_pairwise_trajectory_distance_matrix_simple_python(demos)
+e_python = time()
+print(D_python)
+
+s_cpp = time()
+D_cpp = homology_clustering_py.get_pairwise_trajectory_distance_matrix_simple(demos)
+e_cpp = time()
+print(D_cpp)
+
+print("[pairwise, simple] python:", e_python-s_python)
+print("[pairwise, simple] cpp:", e_cpp-s_cpp)
+print('Speedup: {0:.2f}x'.format((e_python-s_python)/(e_cpp-s_cpp)))
+
+print((D_cpp-D_python)<1e-2)
+
+np.testing.assert_allclose(D_cpp, D_python, atol=1e-6)
+
+exit()
+
+s = time()
+D_python = trajectory_segment_distance_python(demos)
+e = time()
+print("[trajectory_segment_distance] Python took", e-s)
+s = time()
+D_python = trajectory_segment_distance_python(demos)
+e = time()
+print("[trajectory_segment_distance] Python (2nd run) took", e-s)
+
+s = time()
+D_cpp = homology_clustering_py.trajectory_segment_distance(demos)
+e = time()
+print("[trajectory_segment_distance] C++ took", e-s)
+
+np.testing.assert_allclose(D_python, D_cpp, atol=1e-6)
+
+print('--------------------------------------------------------')
+
+tic=time()
+D_cpp = trajectory_segment_distance(demos)
+print('Distance computation time: ' + str(time()-tic))
+ss = time()
+trajectory_mod(D_cpp, [demos.shape[0], demos.shape[1]-1], True, True)
+ee = time()
+time_cpp = ee - ss
+print('[C++] Trajectory distance modification time:', ee-ss)
+
+tic=time()
+D_python = trajectory_segment_distance(demos)
+print('Distance computation time: ' + str(time()-tic))
+ss = time()
+trajectory_mod_python(D_python, [demos.shape[0], demos.shape[1]-1], True, True)
+ee = time()
+time_python = ee - ss
+print('[Python] Trajectory distance modification time:', ee-ss)
+print('Speedup: {0:.2f}x'.format(time_python/time_cpp))
+np.testing.assert_allclose(D_python, D_cpp, atol=1e-6)
+
+print('--------------------------------------------------------')
+
+# d_pair
+ss = time()
+D_cpp = d_pair_cpp(demos)
+ee = time()
+time_cpp = ee - ss
+print('[C++] Trajectory distance modification time:', ee-ss)
+
+ss = time()
+D_python = d_pair(demos)
+ee = time()
+time_python = ee - ss
+print('[Python] Trajectory distance modification time:', ee-ss)
+print('Speedup: {0:.2f}x'.format(time_python/time_cpp))
+np.testing.assert_allclose(D_python, D_cpp, atol=1e-6)
+
+
+exit()
+
+'''
+ripserpy_s = time()
+result_filtration, D = compute_homology_filtration(demos, dataset)
+ripserpy_e = time()
+# np.savez('full_filtration_quadrotor', result_filtration=result_filtration)
+
+print(">>>>>>>> ripser.py")
+
+print(result_filtration['dgms'][0])
+print(result_filtration['dgms'][1])
+
+print(">>>>>>>> pyripser")
+import pyripser
+
+pyripser_s = time()
+result_pyripser = pyripser.ripser(D)
+pyripser_e = time()
+print("pyripser took", pyripser_e-pyripser_s)
+print(result_pyripser[0])
+print(result_pyripser[1])
+'''
+
+exit()
+
+import matplotlib.pyplot as plt
+from persim import plot_diagrams
+
+plt.figure(figsize=(10, 10))
+plt.subplot(121)
+plt.title("Quadcopter (subset)")
+plot_diagrams(result_filtration['dgms'], show=False, lifetime=True)
+plt.subplot(122)
+plt.imshow(D)
+# plt.title("Quadcopter (subset)")
+# plot_diagrams(result_without['dgms'], show=False, lifetime=True)
+
+plt.show()

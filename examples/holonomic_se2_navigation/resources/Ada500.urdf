@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<robot name="Ada500">
+  <!-- Materials -->
+  <material name="DarkGrey">
+    <color rgba="0.3 0.3 0.3 1.0"/>
+  </material>
+  <material name="BrightWhite">
+    <color rgba="0.8 0.8 0.8 1.0"/>
+  </material>
+  <material name="GlassWhite">
+    <color rgba="1 1 1 1.0"/>
+  </material>
+  <material name="Pink">
+    <color rgba="1 0.3 0.3 1.0"/>
+  </material>
+  <!-- Base link-->
+  <link name="base_link">
+    <!-- TODO: update inertial information -->
+    <inertial>
+      <mass value="100"/>
+      <inertia ixx="3.30736666667" ixy="0.0" ixz="0.0" iyy="8.45003333333" iyz="0.0" izz="11.5907333333"/>
+      <!-- Technically 0.367 -->
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0 "/>
+      <geometry>
+        <mesh filename="package://ada_description/meshes/Ada500.dae"/>
+      </geometry>
+      <material name="GlassWhite"/>
+    </visual>
+    <collision>
+      <origin rpy="0 0 0" xyz="0 0 0.2085"/>
+      <geometry>
+        <box size="1.002 0.622 0.317"/>
+      </geometry>
+      <material name="Pink"/>
+    </collision>
+  </link>
+  <link name="base_footprint">
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+  </link>
+  <joint name="base_footprint_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="base_footprint"/>
+  </joint>
+  <!-- IMU Link -->
+  <link name="imu_link"/>
+  <link name="imu_link_offset"/>
+  <joint name="imu_joint" type="fixed">
+    <origin rpy="-3.14159265359 0 -1.57079632679" xyz="0.000398 0.268851 0.063"/>
+    <!-- 2018-09-19 cf. Ada500 Sensor frames document, all measured from floor level -->
+    <parent link="base_footprint"/>
+    <child link="imu_link_offset"/>
+  </joint>
+  <joint name="imu_joint_offset" type="fixed">
+    <origin rpy="0.05618846901311101 0.0010051236135001681 -0.0004677834189930531" xyz="0 0 0"/>
+    <!-- 2018-10-19 IMU offset measured from acceleration offset on flat floor -->
+    <parent link="imu_link_offset"/>
+    <child link="imu_link"/>
+  </joint>
+  <!-- Front left link-->
+  <link name="wheel_link_fl">
+    <inertial>
+      <mass value="10"/>
+      <origin rpy="1.57079632679 0 0" xyz="0 0 0"/>
+      <inertia ixx="0.0358958333333" ixy="0" ixz="0" iyy="0.0358958333333" iyz="0" izz="0.055125"/>
+    </inertial>
+    <visual>
+      <origin rpy="3.14159265359 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ada_description/meshes/Wheel1.dae"/>
+      </geometry>
+      <material name="BrightWhite"/>
+    </visual>
+  </link>
+  <joint name="wheel_joint_fl" type="continuous">
+    <axis xyz="0 1 0"/>
+    <limit effort="30" velocity="10"/>
+    <dynamics damping="1.0" friction="1.0"/>
+    <safety_controller k_velocity="10.0"/>
+    <origin rpy="0 0 0" xyz="0.25 0.25 0.105"/>
+    <parent link="base_link"/>
+    <child link="wheel_link_fl"/>
+  </joint>
+  <!-- Front right link-->
+  <link name="wheel_link_fr">
+    <inertial>
+      <mass value="10"/>
+      <origin rpy="1.57079632679 0 0" xyz="0 0 0"/>
+      <inertia ixx="0.0358958333333" ixy="0" ixz="0" iyy="0.0358958333333" iyz="0" izz="0.055125"/>
+    </inertial>
+    <visual>
+      <origin rpy="3.14159265359 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ada_description/meshes/Wheel2.dae"/>
+      </geometry>
+      <material name="BrightWhite"/>
+    </visual>
+  </link>
+  <joint name="wheel_joint_fr" type="continuous">
+    <axis xyz="0 1 0"/>
+    <limit effort="30" velocity="10"/>
+    <dynamics damping="1.0" friction="1.0"/>
+    <safety_controller k_velocity="10.0"/>
+    <origin rpy="0 0 0" xyz="0.25 -0.25 0.105"/>
+    <parent link="base_link"/>
+    <child link="wheel_link_fr"/>
+  </joint>
+  <!-- Rear left link-->
+  <link name="wheel_link_rl">
+    <inertial>
+      <mass value="10"/>
+      <origin rpy="1.57079632679 0 0" xyz="0 0 0"/>
+      <inertia ixx="0.0358958333333" ixy="0" ixz="0" iyy="0.0358958333333" iyz="0" izz="0.055125"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ada_description/meshes/Wheel2.dae"/>
+      </geometry>
+      <material name="BrightWhite"/>
+    </visual>
+  </link>
+  <joint name="wheel_joint_rl" type="continuous">
+    <axis xyz="0 1 0"/>
+    <limit effort="30" velocity="10"/>
+    <dynamics damping="1.0" friction="1.0"/>
+    <safety_controller k_velocity="10.0"/>
+    <origin rpy="0 0 0" xyz="-0.25 0.25 0.105"/>
+    <parent link="base_link"/>
+    <child link="wheel_link_rl"/>
+  </joint>
+  <!-- Rear right link-->
+  <link name="wheel_link_rr">
+    <inertial>
+      <mass value="10"/>
+      <origin rpy="1.57079632679 0 0" xyz="0 0 0"/>
+      <inertia ixx="0.0358958333333" ixy="0" ixz="0" iyy="0.0358958333333" iyz="0" izz="0.055125"/>
+    </inertial>
+    <visual>
+      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <geometry>
+        <mesh filename="package://ada_description/meshes/Wheel1.dae"/>
+      </geometry>
+      <material name="BrightWhite"/>
+    </visual>
+  </link>
+  <joint name="wheel_joint_rr" type="continuous">
+    <axis xyz="0 1 0"/>
+    <limit effort="30" velocity="10"/>
+    <dynamics damping="1.0" friction="1.0"/>
+    <safety_controller k_velocity="10.0"/>
+    <origin rpy="0 0 0" xyz="-0.25 -0.25 0.105"/>
+    <parent link="base_link"/>
+    <child link="wheel_link_rr"/>
+  </joint>
+</robot>

@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>topological_memory_clustering</name>
+  <version>1.0.0</version>
+  <description>Trajectory clutering and discontinuity- and multimodality-sensitive learning using persistent homology</description>
+
+  <maintainer email="wolfgang@robots.ox.ac.uk">Wolfgang Merkt</maintainer>
+  <author>Wolfgang Merkt</author>
+  <license>BSD</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <depend>exotica_examples</depend>
+  <depend>exotica_python</depend>
+  <depend>pybind11_catkin</depend>
+  <!-- pip: ripser, keras, tensorflow-gpu, tqdm -->
+
+  <!-- For RViz screenshots -->
+  <exec_depend>jsk_rviz_plugins</exec_depend>
+</package>

@@ -1,0 +1,39 @@
+<?xml version="1.0" ?>
+<PlannerDemoConfig>
+    <RRTConnectSolver Name="MySolver">
+        <FinalInterpolationLength>50</FinalInterpolationLength>
+        <!-- <RandomSeed>42</RandomSeed> -->
+    </RRTConnectSolver>
+
+    <SamplingProblem Name="MyProblem">
+        <PlanningScene>
+            <Scene>
+                <JointGroup>base</JointGroup>
+                <URDF>{exotica_examples}/resources/robots/quadrotor.urdf</URDF>
+                <SRDF>{exotica_examples}/resources/robots/quadrotor.srdf</SRDF>
+                <SetRobotDescriptionRosParams>1</SetRobotDescriptionRosParams>
+                <CollisionScene>
+                    <CollisionSceneFCLLatest Name="MyCollisionScene">
+                        <ReplaceCylindersWithCapsules>1</ReplaceCylindersWithCapsules>
+                    </CollisionSceneFCLLatest>
+                </CollisionScene>
+                <AlwaysUpdateCollisionScene>1</AlwaysUpdateCollisionScene>
+                <LoadScene>{topological_memory_clustering}/examples/quadrotor/resources/single_sphere.scene</LoadScene>
+            </Scene>
+        </PlanningScene>
+
+        <Maps>
+            <CollisionCheck Name="Collision" SelfCollision="0"/>
+        </Maps>
+
+        <Equality>
+            <Task Task="Collision"/>
+        </Equality>
+
+        <StartState>-1.75 -1.75 -1.75 0 0 0</StartState>
+        <Goal>1.75 1.75 1.75 0 0 0</Goal>
+
+        <FloatingBaseLowerLimits>-10 -10 -10 -3.1415 -3.1415 -3.1415</FloatingBaseLowerLimits>
+        <FloatingBaseUpperLimits> 10  10 10 3.1415 3.1415 3.1415</FloatingBaseUpperLimits>
+    </SamplingProblem>
+</PlannerDemoConfig>
