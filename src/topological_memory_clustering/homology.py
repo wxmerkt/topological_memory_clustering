@@ -61,20 +61,39 @@ def stacked_vector_to_preprocessed_distance_matrix(samples_X, X, subsampling_ste
 from homology_clustering_py import trajectory_mod
 
 def trajectory_mod_python(D, shape, connect_start=False, connect_end=True):
-    val = 0. #1e-14
-    if D.shape[0] != shape[0]*shape[1]:
-        raise ValueError('Wrong shape: D-rows={0} when given {1}x{2}'.format(D.shape[0], shape[0], shape[1]))
-    for i in range(shape[0]):
-        for j in range(i+1, shape[0]):
+    """
+    Function to modify a distance matrix of point- or segment-wise distances to retain trajectory information.
+
+    Parameters
+    ----------
+    D: distance matrix to be modified. Expected size: N_samples * N_segments.
+    shape: Sample and time dimension
+    connect_start: Whether the distance between trajectory start points is meant to be set to zero (common start point).
+    connect_start: Whether the distance between trajectory end points is meant to be set to zero (common end point).
+    """
+    val = 0.0
+    n_samples = shape[0]
+    n_segments = shape[1]
+    if D.shape[0] != n_samples * n_segments:
+        raise ValueError('Wrong shape: D-rows={0} when given {1}x{2}'.format(D.shape[0], n_samples, n_segments))
+    for sample_id in range(n_samples):  # Iterate over number of trajectory samples
+        ## Connect start and end points of samples, if requested
+        # These represent the top-left entry and bottom-right entry of subsequent samples
+        for segment_id in range(sample_id+1, n_samples):  # Iterate over subsequent samples
             if connect_start:
-                D[i*shape[1], j*shape[1]] = val
-                D[j*shape[1], i*shape[1]] = val
+                D[sample_id*n_segments, segment_id*n_segments] = val
+                D[segment_id*n_segments, sample_id*n_segments] = val
             if connect_end:
-                D[(i+1)*shape[1] -1, (j+1)*shape[1] -1] = val
-                D[(j+1)*shape[1] -1, (i+1)*shape[1] -1] = val
-        for j in range(shape[1]-1):
-                D[i*shape[1]+j, i*shape[1]+j+1] = val
-                D[i*shape[1]+j+1, i*shape[1]+j] = val
+                D[(sample_id+1)*n_segments -1, (segment_id+1)*n_segments -1] = val
+                D[(segment_id+1)*n_segments -1, (sample_id+1)*n_segments -1] = val
+        ## Connect subsequent segments
+        # Within each sample, this is in effect a zero-diagonal of width 3
+        # Note, this is *not* a zero-diagonal of bandwidth 3 for the entire matrix
+        # as this would represent the end-point of one sample being connected to the
+        # start-point of the subsequent sample.
+        for segment_id in range(n_segments-1):
+            D[sample_id*n_segments+segment_id, sample_id*n_segments+segment_id+1] = val
+            D[sample_id*n_segments+segment_id+1, sample_id*n_segments+segment_id] = val
 
 def getGreedyPerm(D_in):
     """
@@ -187,22 +206,30 @@ from homology_clustering_py import trajectory_segment_distance
 
 ### Vlad's new magic
 def trajectory_segment_distance_python(demos):
-    n = demos.shape[1] - 1
-    N = demos.shape[0] * n
+    """
+    Function to create a N*(T-1) distance matrix where N=number of samples and T=time dimension of individual samples
+    """
+    n_samples = demos.shape[0]
+    n_segments = demos.shape[1] - 1  # number of segments; here: number of trajectory knot points minus 1 since we are using straight-line segments between subsequent knot points
+
+    N = n_samples * n_segments  # dimension of distance matrix, N*(T-1)
     D = np.zeros([N, N])
-    for i in range(demos.shape[0]):
-        for j in range(i, demos.shape[0]):
-            for k in range(n):
-                for l in range(n):
-                    if i==j and k==l:
+    for sample_id in range(n_samples):  # Iterate over samples
+        for other_sample_id in range(sample_id, n_samples):  # Iterate over the current + subsequent (other) samples
+            for segment_in_sample_id in range(n_segments):  # Iterate over segments
+                for segment_in_other_sample_id in range(n_segments):  # Iterate over segments
+                    # The distance between the same segment in each sample is 0, i.e. skip computation of segment distance
+                    if sample_id==other_sample_id and segment_in_sample_id==segment_in_other_sample_id:
                         continue
-                    a1 = demos[i,k]
-                    a2 = demos[i,k+1]
-                    b1 = demos[j,l]
-                    b2 = demos[j,l+1]
+                    # Compute distance between line segments based on start and end points of each line segment
+                    a1 = demos[sample_id,segment_in_sample_id]
+                    a2 = demos[sample_id,segment_in_sample_id+1]
+                    b1 = demos[other_sample_id,segment_in_other_sample_id]
+                    b2 = demos[other_sample_id,segment_in_other_sample_id+1]
                     d=segment_distance(a1,a2,b1,b2)
-                    D[i*n+k,j*n+l] = d
-                    D[j*n+l,i*n+k] = d
+                    # We consider the distances to be the same in both directions (D is symmetric), i.e. D[i,j]=D[j,i]:
+                    D[sample_id*n_segments+segment_in_sample_id,other_sample_id*n_segments+segment_in_other_sample_id] = d
+                    D[other_sample_id*n_segments+segment_in_other_sample_id,sample_id*n_segments+segment_in_sample_id] = d
     return D
 
 from homology_clustering_py import segment_distance
@@ -256,7 +283,7 @@ def segment_distance_python(point1s, point1e, point2s, point2e):
 
 # 'compute_pair'
 def compute_homology_filtration(demos, data=None, truncate_small_distances=None, truncate_below_percentage=None, connect_start=True, connect_end=True, do_cocycles=False, n_perm=None, scale=1.0, debug=False):
-    # Compute the sparse filtration
+    # Compute the dense filtration
     tic = time()
 
     # First compute all pairwise distances and do furthest point sampling
@@ -284,7 +311,7 @@ def compute_homology_filtration(demos, data=None, truncate_small_distances=None,
 
     result_dense['time_dense'] = time_dense
 
-    return (result_dense, D, ) #result_sparse, DSparse)
+    return (result_dense, D, )
 
 def compute_filtration_from_preprocessed_distance_matrix(D, debug=False):
     ss = time()
